@@ -196,7 +196,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 			
 		case "use_item":
 			long use = 0;
-			if (use_item == null) {
+			if (use_item.isEmpty()) {
 				return "0";
 			}
 			for (Material m : use_item) {
@@ -206,7 +206,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 			
 		case "break_item":
 			long br = 0;
-			if (break_item == null) {
+			if (break_item.isEmpty()) {
 				return "0";
 			}
 			for (Material m : break_item) {
@@ -216,7 +216,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 			
 		case "craft_item":
 			long cr = 0;
-			if (craft_item == null) {
+			if (craft_item.isEmpty()) {
 				return "0";
 			}
 			for (Material m : craft_item) {
