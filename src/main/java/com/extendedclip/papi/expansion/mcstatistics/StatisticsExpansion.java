@@ -28,15 +28,22 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.util.BlockIterator;
 
 import me.clip.placeholderapi.expansion.Cacheable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.util.TimeFormat;
 import me.clip.placeholderapi.util.TimeUtil;
 
-public class StatisticsExpansion extends PlaceholderExpansion implements Cacheable {
+public class StatisticsExpansion extends PlaceholderExpansion implements Cacheable, Listener {
 
 	private final Set<Material> mine_block = EnumSet.noneOf(Material.class);
 	private final Set<Material> use_item = EnumSet.noneOf(Material.class);
@@ -44,7 +51,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 	private final Set<Material> craft_item = EnumSet.noneOf(Material.class);
 
 	private final String VERSION = getClass().getPackage().getImplementationVersion();
-	
+
 	public StatisticsExpansion() {
 		setup();
 	}
@@ -58,7 +65,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 			e.printStackTrace();
 			return;
 		}
-		
+
 		Method method;
 		try {
 			method = craftStatistic.getMethod("getMaterialStatistic", Statistic.class, Material.class);
@@ -113,75 +120,38 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 		return VERSION;
 	}
 
+	@EventHandler
+	public void onHit(ProjectileHitEvent e) {
+
+		if (!(e.getEntity().getShooter() instanceof Player)) {
+			return;
+		}
+
+		Player player = (Player) e.getEntity().getShooter();
+		
+		Projectile projectile = e.getEntity();
+
+		World world = projectile.getWorld();
+		
+		int max = 1;
+
+		BlockIterator iterator = new BlockIterator(world, projectile.getLocation().toVector().multiply(1), projectile.getVelocity().normalize(), 0, max);
+
+		Block hitBlock = null;
+
+		while (iterator.hasNext()) {
+			hitBlock = iterator.next();
+			player.sendMessage(hitBlock.getType().toString());
+		}
+	}
+
 	@Override
 	public String onPlaceholderRequest(Player p, String identifier) {
-	
+
 		if (p == null) {
 			return "";
 		}
 
-		if (identifier.contains("mine_block_")) {
-			try {
-				String type = identifier.split("mine_block_")[1];
-				long mine = p.getStatistic(Statistic.MINE_BLOCK, Material.valueOf(type));
-				return String.valueOf(mine);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return "0";
-			
-		} else if (identifier.contains("use_item_")) {
-			try {
-				String type = identifier.split("use_item_")[1];
-				long use = p.getStatistic(Statistic.USE_ITEM, Material.valueOf(type));
-				return String.valueOf(use);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return "0";
-			
-		} else if (identifier.contains("break_item_")) {
-			try {
-				String type = identifier.split("break_item_")[1];
-				long b = p.getStatistic(Statistic.BREAK_ITEM, Material.valueOf(type));
-				return String.valueOf(b);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			return "0";
-			
-		} else if (identifier.contains("craft_item_")) {
-			try {
-				String type = identifier.split("craft_item_")[1];
-				long c = p.getStatistic(Statistic.CRAFT_ITEM, Material.valueOf(type));
-				return String.valueOf(c);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return "0";
-			
-		} else if (identifier.contains("kill_entity_")) {
-			try {
-				String type = identifier.split("kill_entity_")[1];
-				long kills = p.getStatistic(Statistic.KILL_ENTITY, EntityType.valueOf(type));
-				return String.valueOf(kills);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return "0";
-				
-		} else if (identifier.contains("entity_killed_by_")) {
-			try {
-				String type = identifier.split("entity_killed_by_")[1];
-				long kills = p.getStatistic(Statistic.ENTITY_KILLED_BY, EntityType.valueOf(type));
-				return String.valueOf(kills);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return "0";
-		}
-		
 		switch (identifier.toLowerCase()) {
 
 		case "mine_block":
@@ -193,7 +163,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 				mine += p.getStatistic(Statistic.MINE_BLOCK, m);
 			}
 			return String.valueOf(mine);
-			
+
 		case "use_item":
 			long use = 0;
 			if (use_item.isEmpty()) {
@@ -203,7 +173,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 				use += p.getStatistic(Statistic.USE_ITEM, m);
 			}
 			return String.valueOf(use);
-			
+
 		case "break_item":
 			long br = 0;
 			if (break_item.isEmpty()) {
@@ -213,7 +183,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 				br += p.getStatistic(Statistic.BREAK_ITEM, m);
 			}
 			return String.valueOf(br);
-			
+
 		case "craft_item":
 			long cr = 0;
 			if (craft_item.isEmpty()) {
@@ -252,12 +222,90 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 		case "days_since_death":
 			return String.valueOf((((p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L) / 60L) / 60L) / 24L);
 		}
+		
+		Statistic stat = null;
+		// %statistic_<Statistic>:<Material/Entity>%
+		int t = identifier.indexOf(":");
+		
+		if (t == -1) {
+			try {
+				stat = Statistic.valueOf(identifier.toUpperCase());
+				if (stat.getType() == Statistic.Type.UNTYPED) {
+					return String.valueOf(p.getStatistic(stat));
+				}		
+			} catch (IllegalArgumentException | NullPointerException ex) { 
+				ex.printStackTrace();
+			}
+			return "invalid stat";
+		}
+		
+		String name = identifier.substring(0, t).toUpperCase();
 
+		String types = identifier.substring(t+1).toUpperCase();
+		
 		try {
-			return String.valueOf(p.getStatistic(Statistic.valueOf(identifier)));
-		} catch (Exception ex) {
-			return null;
-		}	
+			stat = Statistic.valueOf(name);
+			if (stat.getType() == Statistic.Type.UNTYPED) {
+				return String.valueOf(p.getStatistic(stat));
+			}		
+		} catch (IllegalArgumentException | NullPointerException ex) { 
+			ex.printStackTrace();
+			return "invalid stat";
+		}
+		// %statistic_<Statistic>:<Material/Entity>%
+		if (types.indexOf(",") == -1) {
+			switch (stat.getType()) {
+			case BLOCK:
+			case ITEM:
+				try {
+					return String.valueOf(p.getStatistic(stat, Material.getMaterial(types)));
+				} catch (IllegalArgumentException | NullPointerException ex) { 
+					ex.printStackTrace();
+					return "invalid material param";
+				}
+			case ENTITY:
+				try {
+					return String.valueOf(p.getStatistic(stat, EntityType.valueOf(types)));
+				} catch (IllegalArgumentException | NullPointerException ex) { 
+					ex.printStackTrace();
+					return "invalid entity param";
+				}
+			default:
+				break;
+			}
+		}		
+		// %statistic_<Statistic>:<Material/Entity>,<Material/Entity>,<Material/Entity>%
+		String[] args = types.split(",");
+		
+		int total = 0;
+		
+		switch (stat.getType()) {
+		case BLOCK:
+		case ITEM:
+			for (String arg : args) {
+				try {
+					total += p.getStatistic(stat, Material.getMaterial(arg));
+				} catch (IllegalArgumentException | NullPointerException ex) { 
+					ex.printStackTrace();
+					continue;
+				}
+			}
+			break;
+		case ENTITY:
+			for (String arg : args) {
+				try {
+					total += p.getStatistic(stat, EntityType.valueOf(arg));
+				} catch (IllegalArgumentException | NullPointerException ex) { 
+					ex.printStackTrace();
+					continue;
+				}
+			}
+			break;
+		default:
+			break;
+		}
+		
+		return String.valueOf(total);
 	}
 
 	@Override
