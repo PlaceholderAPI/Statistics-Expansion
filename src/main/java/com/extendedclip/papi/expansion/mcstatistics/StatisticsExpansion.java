@@ -252,6 +252,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 			ex.printStackTrace();
 			return "invalid stat";
 		}
+		
 		// %statistic_<Statistic>:<Material/Entity>%
 		if (types.indexOf(",") == -1) {
 			switch (stat.getType()) {
@@ -273,7 +274,8 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 			default:
 				break;
 			}
-		}		
+		}	
+		
 		// %statistic_<Statistic>:<Material/Entity>,<Material/Entity>,<Material/Entity>%
 		String[] args = types.split(",");
 		
