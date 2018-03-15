@@ -28,22 +28,15 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
-import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.util.BlockIterator;
 
 import me.clip.placeholderapi.expansion.Cacheable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.util.TimeFormat;
 import me.clip.placeholderapi.util.TimeUtil;
 
-public class StatisticsExpansion extends PlaceholderExpansion implements Cacheable, Listener {
+public class StatisticsExpansion extends PlaceholderExpansion implements Cacheable {
 
 	private final Set<Material> mine_block = EnumSet.noneOf(Material.class);
 	private final Set<Material> use_item = EnumSet.noneOf(Material.class);
@@ -118,31 +111,6 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 	@Override
 	public String getVersion() {
 		return VERSION;
-	}
-
-	@EventHandler
-	public void onHit(ProjectileHitEvent e) {
-
-		if (!(e.getEntity().getShooter() instanceof Player)) {
-			return;
-		}
-
-		Player player = (Player) e.getEntity().getShooter();
-		
-		Projectile projectile = e.getEntity();
-
-		World world = projectile.getWorld();
-		
-		int max = 1;
-
-		BlockIterator iterator = new BlockIterator(world, projectile.getLocation().toVector().multiply(1), projectile.getVelocity().normalize(), 0, max);
-
-		Block hitBlock = null;
-
-		while (iterator.hasNext()) {
-			hitBlock = iterator.next();
-			player.sendMessage(hitBlock.getType().toString());
-		}
 	}
 
 	@Override
