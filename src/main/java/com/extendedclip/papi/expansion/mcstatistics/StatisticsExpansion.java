@@ -90,8 +90,8 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
         if (method.invoke(null, Statistic.CRAFT_ITEM, m) != null) {
           craft_item.add(m);
         }
-      } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-        e.printStackTrace();
+        } catch (Exception e) {
+        // ignore
       }
     }
   }
