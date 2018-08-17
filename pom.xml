@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.extendedclip.papi.expansion.mcstatistics</groupId>
   <artifactId>statistics-expansion</artifactId>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
   <name>PAPI-Expansion-Statistic</name>
   <description>PlaceholderAPI expansion for minecraft statistic placeholders</description>
 
