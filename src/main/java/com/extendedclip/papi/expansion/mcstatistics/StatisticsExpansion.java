@@ -20,11 +20,8 @@
  */
 package com.extendedclip.papi.expansion.mcstatistics;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.EnumSet;
 import java.util.Set;
-import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.Cacheable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.util.TimeUtil;
@@ -61,37 +58,15 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
   }
 
   private void setup() {
-    String version = PlaceholderAPIPlugin.getServerVersion().getVersion();
-    Class<?> craftStatistic;
-    try {
-      craftStatistic = Class.forName("org.bukkit.craftbukkit." + version + ".CraftStatistic");
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
-    Method method;
-    try {
-      method = craftStatistic.getMethod("getMaterialStatistic", Statistic.class, Material.class);
-    } catch (NoSuchMethodException | SecurityException e) {
-      e.printStackTrace();
-      return;
-    }
     for (Material m : Material.values()) {
-      try {
-        if (method.invoke(null, Statistic.MINE_BLOCK, m) != null) {
-          mine_block.add(m);
-        }
-        if (method.invoke(null, Statistic.USE_ITEM, m) != null) {
-          use_item.add(m);
-        }
-        if (method.invoke(null, Statistic.BREAK_ITEM, m) != null) {
-          break_item.add(m);
-        }
-        if (method.invoke(null, Statistic.CRAFT_ITEM, m) != null) {
-          craft_item.add(m);
-        }
-        } catch (Exception e) {
-        // ignore
+      // md_5 laughed at using reflection for this and said below works so lets find out...
+      if (m.isBlock()) {
+        mine_block.add(m);
+      }
+      if (m.isItem()) {
+        use_item.add(m);
+        craft_item.add(m);
+        break_item.add(m);
       }
     }
   }
