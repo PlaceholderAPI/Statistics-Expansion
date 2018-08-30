@@ -117,16 +117,15 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
         }
         return String.valueOf(cr);
       case "seconds_played":
-        // kind of pointless now since time is tracked by the minute... Oh well
-        return String.valueOf(p.getStatistic(Statistic.PLAY_ONE_MINUTE) * 60);
+        return String.valueOf(p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20);
       case "minutes_played":
-        return String.valueOf(p.getStatistic(Statistic.PLAY_ONE_MINUTE));
+        return String.valueOf((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60);
       case "hours_played":
-        return String.valueOf(p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 60);
+        return String.valueOf(((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60);
       case "days_played":
-        return String.valueOf((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 60) / 24);
+        return String.valueOf((((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60) / 24);
       case "time_played":
-        return TimeUtil.getTime(p.getStatistic(Statistic.PLAY_ONE_MINUTE) * 60);
+        return TimeUtil.getTime((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20));
       case "time_since_death":
         return TimeUtil.getTime(p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20);
       case "seconds_since_death":
@@ -136,8 +135,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
       case "hours_since_death":
         return String.valueOf(((p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L) / 60L) / 60L);
       case "days_since_death":
-        return String
-            .valueOf((((p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L) / 60L) / 60L) / 24L);
+        return String.valueOf((((p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L) / 60L) / 60L) / 24L);
     }
 
     Statistic stat;
