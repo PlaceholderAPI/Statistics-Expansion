@@ -117,15 +117,38 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
         }
         return String.valueOf(cr);
       case "seconds_played":
-        return String.valueOf(p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20);
+        try {
+          return String.valueOf(p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20);
+        } catch (NoSuchFieldError error) {
+          return String.valueOf(p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20);
+        }
       case "minutes_played":
-        return String.valueOf((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60);
+        try {
+          return String.valueOf((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60);
+        } catch (NoSuchFieldError error) {
+          return String.valueOf((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20) / 60);
+        }
+
       case "hours_played":
-        return String.valueOf(((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60);
+        try {
+          return String.valueOf(((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60);
+        } catch (NoSuchFieldError error) {
+          return String.valueOf(((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20) / 60) / 60);
+        }
+
       case "days_played":
-        return String.valueOf((((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60) / 24);
+        try {
+          return String.valueOf((((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60) / 24);
+        } catch (NoSuchFieldError error) {
+          return String.valueOf((((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20) / 60) / 60) / 24);
+        }
+
       case "time_played":
-        return TimeUtil.getTime((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20));
+        try {
+          return TimeUtil.getTime((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20));
+        } catch (NoSuchFieldError error) {
+          return TimeUtil.getTime((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20));
+        }
       case "time_since_death":
         return TimeUtil.getTime(p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20);
       case "seconds_since_death":

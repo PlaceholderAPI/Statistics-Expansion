@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.extendedclip.papi.expansion.mcstatistics</groupId>
   <artifactId>statistics-expansion</artifactId>
-  <version>1.9.1</version>
+  <version>1.9.2</version>
   <name>PAPI-Expansion-Statistic</name>
   <description>PlaceholderAPI expansion for minecraft statistic placeholders</description>
 
@@ -23,7 +23,7 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.13-R0.1-SNAPSHOT</version>
+      <version>1.13.1-R0.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
