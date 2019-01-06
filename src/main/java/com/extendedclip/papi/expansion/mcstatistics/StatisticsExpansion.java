@@ -83,7 +83,14 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
           return "0";
         }
         for (Material m : mine_block) {
-          mine += p.getStatistic(Statistic.MINE_BLOCK, m);
+          long value;
+          try {
+            value = p.getStatistic(Statistic.MINE_BLOCK, m);
+          } catch (Exception e) {
+            // System.out.println(String.format("Error: papi statistic for %s mine_block %s (%d): %s", p.getName(), m.name(), m.getId(), e.getMessage()));
+            value = 0;
+          }
+          mine += value;
         }
         return String.valueOf(mine);
 
