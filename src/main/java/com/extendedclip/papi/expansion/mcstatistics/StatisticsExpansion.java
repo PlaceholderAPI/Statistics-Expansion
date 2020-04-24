@@ -45,7 +45,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
     private final ListMultimap<Statistic, Material> ignoredMaterials = ArrayListMultimap.create();
     private final String VERSION = getClass().getPackage().getImplementationVersion();
     private final boolean isLegacy = !Enums.getIfPresent(Material.class, "TURTLE_HELMET").isPresent();
-    public final static String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
+    public static final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
     
     @Override
     public String getAuthor() {
@@ -152,7 +152,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
             }
         }
 
-        final int splitterIndex = identifier.indexOf(":");
+        final int splitterIndex = identifier.indexOf(':');
         // %statistic_<Statistic>%
         if (splitterIndex == -1) {
             return StatisticsUtils.getStatistic(player, identifier);
