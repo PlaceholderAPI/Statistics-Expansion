@@ -29,6 +29,7 @@ import me.clip.placeholderapi.expansion.Cacheable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -64,10 +65,16 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 
     @SuppressWarnings({"DuplicatedCode", "Guava"})
     @Override
-    public String onPlaceholderRequest(final Player player, String identifier) {
-        if (player == null) {
+    public String onRequest(final OfflinePlayer offlinePlayer, String identifier) {
+        if (offlinePlayer == null) {
             return "";
         }
+
+        if (!offlinePlayer.isOnline()) {
+            return "";
+        }
+
+        final Player player = offlinePlayer.getPlayer();
 
         final int secondsPlayed = StatisticsUtils.getSecondsPlayed(player, isLegacy);
         final int secondsSinceLastDeath = StatisticsUtils.getSecondsSinceLastDeath(player, isLegacy);
