@@ -1,7 +1,7 @@
 /*
  *
  * Statistics-Expansion
- * Copyright (C) 2018 Ryan McCarthy
+ * Copyright (C) 2020 Ryan McCarthy
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,233 +20,284 @@
  */
 package com.extendedclip.papi.expansion.mcstatistics;
 
-import java.util.EnumSet;
-import java.util.Set;
+import com.google.common.base.Enums;
+import com.google.common.base.Optional;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.Cacheable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import me.clip.placeholderapi.util.TimeUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+
 public class StatisticsExpansion extends PlaceholderExpansion implements Cacheable {
 
-  private final Set<Material> mine_block = EnumSet.noneOf(Material.class);
-  private final Set<Material> use_item = EnumSet.noneOf(Material.class);
-  private final Set<Material> break_item = EnumSet.noneOf(Material.class);
-  private final Set<Material> craft_item = EnumSet.noneOf(Material.class);
-  private final String VERSION = getClass().getPackage().getImplementationVersion();
-
-  public StatisticsExpansion() {
-    setup();
-  }
-
-  @Override
-  public String getAuthor() {
-    return "clip";
-  }
-
-  @Override
-  public String getIdentifier() {
-    return "statistic";
-  }
-
-  @Override
-  public String getVersion() {
-    return VERSION;
-  }
-
-  private void setup() {
-    for (Material m : Material.values()) {
-      // md_5 laughed at using reflection for this and said below works so lets find out...
-      if (m.isBlock()) {
-        mine_block.add(m);
-      }
-      if (m.isItem()) {
-        use_item.add(m);
-        craft_item.add(m);
-        break_item.add(m);
-      }
-    }
-  }
-
-  @Override
-  public String onPlaceholderRequest(Player p, String identifier) {
-    if (p == null) {
-      return "";
-    }
-    switch (identifier.toLowerCase()) {
-      case "mine_block":
-        long mine = 0;
-        if (mine_block.isEmpty()) {
-          return "0";
-        }
-        for (Material m : mine_block) {
-          mine += p.getStatistic(Statistic.MINE_BLOCK, m);
-        }
-        return String.valueOf(mine);
-
-      case "use_item":
-        long use = 0;
-        if (use_item.isEmpty()) {
-          return "0";
-        }
-        for (Material m : use_item) {
-          use += p.getStatistic(Statistic.USE_ITEM, m);
-        }
-        return String.valueOf(use);
-
-      case "break_item":
-        long br = 0;
-        if (break_item.isEmpty()) {
-          return "0";
-        }
-        for (Material m : break_item) {
-          br += p.getStatistic(Statistic.BREAK_ITEM, m);
-        }
-        return String.valueOf(br);
-
-      case "craft_item":
-        long cr = 0;
-        if (craft_item.isEmpty()) {
-          return "0";
-        }
-        for (Material m : craft_item) {
-          cr += p.getStatistic(Statistic.CRAFT_ITEM, m);
-        }
-        return String.valueOf(cr);
-      case "seconds_played":
-        try {
-          return String.valueOf(p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20);
-        } catch (NoSuchFieldError error) {
-          return String.valueOf(p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20);
-        }
-      case "minutes_played":
-        try {
-          return String.valueOf((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60);
-        } catch (NoSuchFieldError error) {
-          return String.valueOf((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20) / 60);
-        }
-
-      case "hours_played":
-        try {
-          return String.valueOf(((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60);
-        } catch (NoSuchFieldError error) {
-          return String.valueOf(((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20) / 60) / 60);
-        }
-
-      case "days_played":
-        try {
-          return String.valueOf((((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60) / 24);
-        } catch (NoSuchFieldError error) {
-          return String.valueOf((((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20) / 60) / 60) / 24);
-        }
-
-      case "time_played":
-        try {
-          return TimeUtil.getTime((p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20));
-        } catch (NoSuchFieldError error) {
-          return TimeUtil.getTime((p.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20));
-        }
-      case "time_since_death":
-        return TimeUtil.getTime(p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20);
-      case "seconds_since_death":
-        return String.valueOf(p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L);
-      case "minutes_since_death":
-        return String.valueOf((p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L) / 60L);
-      case "hours_since_death":
-        return String.valueOf(((p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L) / 60L) / 60L);
-      case "days_since_death":
-        return String.valueOf((((p.getStatistic(Statistic.TIME_SINCE_DEATH) / 20L) / 60L) / 60L) / 24L);
+    private final ListMultimap<Statistic, Material> ignoredMaterials = ArrayListMultimap.create();
+    private final String VERSION = getClass().getPackage().getImplementationVersion();
+    private final boolean isLegacy = !Enums.getIfPresent(Material.class, "TURTLE_HELMET").isPresent();
+    public static final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
+    
+    @Override
+    public String getAuthor() {
+        return "clip";
     }
 
-    Statistic stat;
-    int t = identifier.indexOf(":");
-    // %statistic_<Statistic>%
-    if (t == -1) {
-      try {
-        stat = Statistic.valueOf(identifier.toUpperCase());
-        if (stat.getType() == Statistic.Type.UNTYPED) {
-          return String.valueOf(p.getStatistic(stat));
+    @Override
+    public String getIdentifier() {
+        return "statistic";
+    }
+
+    @Override
+    public String getVersion() {
+        return VERSION;
+    }
+
+    @SuppressWarnings({"DuplicatedCode", "Guava"})
+    @Override
+    public String onRequest(final OfflinePlayer offlinePlayer, String identifier) {
+        if (offlinePlayer == null) {
+            return "";
         }
-      } catch (IllegalArgumentException | NullPointerException ex) {
-        ex.printStackTrace();
-      }
-      return "invalid stat";
-    }
 
-    String name = identifier.substring(0, t).toUpperCase();
-    String types = identifier.substring(t + 1).toUpperCase();
-
-    try {
-      stat = Statistic.valueOf(name);
-      if (stat.getType() == Statistic.Type.UNTYPED) {
-        return String.valueOf(p.getStatistic(stat));
-      }
-    } catch (IllegalArgumentException | NullPointerException ex) {
-      ex.printStackTrace();
-      return "invalid stat";
-    }
-
-    // %statistic_<Statistic>:<Material/Entity>%
-    if (!types.contains(",")) {
-      switch (stat.getType()) {
-        case BLOCK:
-        case ITEM:
-          try {
-            return String.valueOf(p.getStatistic(stat, Material.getMaterial(types)));
-          } catch (IllegalArgumentException | NullPointerException ex) {
-            ex.printStackTrace();
-            return "invalid material param";
-          }
-        case ENTITY:
-          try {
-            return String.valueOf(p.getStatistic(stat, EntityType.valueOf(types)));
-          } catch (IllegalArgumentException | NullPointerException ex) {
-            ex.printStackTrace();
-            return "invalid entity param";
-          }
-        default:
-          break;
-      }
-    }
-
-    // %statistic_<Statistic>:<Material/Entity>,<Material/Entity>,<Material/Entity>%
-    String[] args = types.split(",");
-    int total = 0;
-    switch (stat.getType()) {
-      case BLOCK:
-      case ITEM:
-        for (String arg : args) {
-          try {
-            total += p.getStatistic(stat, Material.getMaterial(arg));
-          } catch (IllegalArgumentException | NullPointerException ex) {
-            ex.printStackTrace();
-          }
+        if (!offlinePlayer.isOnline()) {
+            return "";
         }
-        break;
-      case ENTITY:
-        for (String arg : args) {
-          try {
-            total += p.getStatistic(stat, EntityType.valueOf(arg));
-          } catch (IllegalArgumentException | NullPointerException ex) {
-            ex.printStackTrace();
-          }
+
+        final Player player = offlinePlayer.getPlayer();
+
+        final int secondsPlayed = StatisticsUtils.getSecondsPlayed(player, isLegacy);
+        final int secondsSinceLastDeath = StatisticsUtils.getSecondsSinceLastDeath(player, isLegacy);
+
+        switch (identifier.toLowerCase()) {
+            case "mine_block": {
+                return calculateTotal(player, Statistic.MINE_BLOCK);
+            }
+
+            case "use_item": {
+                return calculateTotal(player, Statistic.USE_ITEM);
+            }
+
+            case "break_item": {
+                return calculateTotal(player, Statistic.BREAK_ITEM);
+            }
+
+            case "craft_item": {
+                return calculateTotal(player, Statistic.CRAFT_ITEM);
+            }
+
+            /*
+             * Time played
+             */
+            case "time_played": {
+                return StatisticsUtils.formatTime(Duration.of(secondsPlayed, ChronoUnit.SECONDS));
+            }
+
+            case "time_played:seconds": {
+                //return seconds != 0 ? Long.toString(TimeUnit.MINUTES.toSeconds(1) - seconds) : "0";
+                return Integer.toString(secondsPlayed % 60);
+            }
+
+            case "time_played:minutes": {
+                //return minutes != 0 ? Long.toString(TimeUnit.HOURS.toMinutes(1) - minutes) : "0";
+                return Long.toString(TimeUnit.SECONDS.toMinutes(secondsPlayed) % 60);
+            }
+
+            case "time_played:hours": {
+                //return hours != 0 ? Long.toString(TimeUnit.DAYS.toHours(1) - hours) : "0";
+                return Long.toString(TimeUnit.SECONDS.toHours(secondsPlayed) % 24);
+            }
+
+            case "seconds_played": {
+                return Integer.toString(secondsPlayed);
+            }
+
+            case "minutes_played": {
+                return Long.toString(TimeUnit.SECONDS.toMinutes(secondsPlayed));
+            }
+
+            case "hours_played": {
+                return Long.toString(TimeUnit.SECONDS.toHours(secondsPlayed));
+            }
+
+            case "time_played:days":
+            case "days_played": {
+                return Long.toString(TimeUnit.SECONDS.toDays(secondsPlayed));
+            }
+
+            /*
+             * Time since last death
+             */
+            case "time_since_death": {
+                return StatisticsUtils.formatTime(Duration.of(secondsSinceLastDeath, ChronoUnit.SECONDS));
+            }
+
+            case "seconds_since_death": {
+                return Integer.toString(secondsSinceLastDeath);
+            }
+
+            case "minutes_since_death": {
+                return Long.toString(TimeUnit.SECONDS.toMinutes(secondsSinceLastDeath));
+            }
+
+            case "hours_since_death": {
+                return Long.toString(TimeUnit.SECONDS.toHours(secondsSinceLastDeath));
+            }
+
+            case "days_since_death": {
+                return Long.toString(TimeUnit.SECONDS.toDays(secondsSinceLastDeath));
+            }
         }
-        break;
-      default:
-        break;
+
+        final int splitterIndex = identifier.indexOf(':');
+        // %statistic_<Statistic>%
+        if (splitterIndex == -1) {
+            return StatisticsUtils.getStatistic(player, identifier);
+        }
+
+        final String statisticIdentifier = identifier.substring(0, splitterIndex).toUpperCase();
+        final String types = identifier.substring(splitterIndex + 1).toUpperCase();
+
+        if (types.trim().isEmpty()) {
+            return StatisticsUtils.getStatistic(player, statisticIdentifier);
+        }
+
+        final Optional<Statistic> statisticOptional = Enums.getIfPresent(Statistic.class, statisticIdentifier);
+
+        if (!statisticOptional.isPresent()) {
+            return "Unknown statistic '" + statisticIdentifier + "', check https://helpch.at/docs/" + SERVER_VERSION + "/org/bukkit/Statistic.html for more info";
+        }
+
+        final Statistic statistic = statisticOptional.get();
+
+        // %statistic_<Statistic>:<Material/Entity>%
+        if (!types.contains(",")) {
+            switch (statistic.getType()) {
+                case BLOCK:
+                case ITEM: {
+                    final Optional<Material> material = Enums.getIfPresent(Material.class, types);
+
+                    if (!material.isPresent()) {
+                        return "Invalid material " + types;
+                    }
+
+                    try {
+                        return Integer.toString(player.getStatistic(statistic, material.get()));
+                    } catch (IllegalArgumentException e) {
+                        errorLog("Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'", e);
+                        return "Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'";
+                    }
+                }
+
+                case ENTITY: {
+                    final Optional<EntityType> entityType = Enums.getIfPresent(EntityType.class, types);
+
+                    if (!entityType.isPresent()) {
+                        return "Invalid entity " + types;
+                    }
+
+                    try {
+                        return Integer.toString(player.getStatistic(statistic, entityType.get()));
+                    } catch (IllegalArgumentException e) {
+                        errorLog("Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'", e);
+                        return "Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'";
+                    }
+                }
+
+                default:
+                    break;
+            }
+        }
+
+        // %statistic_<Statistic>:<Material/Entity>,<Material/Entity>,<Material/Entity>%
+        final String[] args = types.split(",");
+        final AtomicInteger total = new AtomicInteger();
+
+        switch (statistic.getType()) {
+            case BLOCK:
+            case ITEM: {
+                for (String arg : args) {
+                    final Optional<Material> material = Enums.getIfPresent(Material.class, arg);
+
+                    if (!material.isPresent()) {
+                        continue;
+                    }
+
+                    try {
+                        total.addAndGet(player.getStatistic(statistic, material.get()));
+                    } catch (IllegalArgumentException e) {
+                        errorLog("Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'", e);
+                        break;
+                    }
+                }
+
+                break;
+            }
+
+            case ENTITY: {
+                for (String arg : args) {
+                    final Optional<EntityType> entityType = Enums.getIfPresent(EntityType.class, arg);
+
+                    if (!entityType.isPresent()) {
+                        continue;
+                    }
+
+                    try {
+                        total.addAndGet(player.getStatistic(statistic, entityType.get()));
+                    } catch (IllegalArgumentException e) {
+                        errorLog("Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'", e);
+                        break;
+                    }
+                }
+
+                break;
+            }
+
+            default:
+                break;
+        }
+
+        return Integer.toString(total.get());
     }
 
-    return String.valueOf(total);
-  }
+    private String calculateTotal(final Player player, final Statistic statistic) {
+        final AtomicLong total = new AtomicLong();
 
-  @Override
-  public void clear() {
-    break_item.clear();
-    craft_item.clear();
-    mine_block.clear();
-    use_item.clear();
-  }
+        for (Material material : Material.values()) {
+            if (ignoredMaterials.get(statistic).contains(material)) {
+                continue;
+            }
+
+            if (statistic == Statistic.MINE_BLOCK && (material.name().equals("GRASS") || material.name().equals("SOIL"))) {
+                continue;
+            }
+
+            try {
+                total.addAndGet(player.getStatistic(statistic, material));
+            } catch (IllegalArgumentException ignored) {
+                ignoredMaterials.put(statistic, material);
+            }
+        }
+
+        return Long.toString(total.get());
+    }
+
+    private void errorLog(final String message, final Throwable exception) {
+        PlaceholderAPIPlugin.getInstance().getLogger().log(Level.SEVERE, "[Statistic Expansion] " + message, exception);
+    }
+
+    @Override
+    public void clear() {
+        ignoredMaterials.clear();
+    }
 }
