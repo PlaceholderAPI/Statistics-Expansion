@@ -22,12 +22,9 @@ package com.extendedclip.papi.expansion.mcstatistics;
 
 import com.google.common.base.Enums;
 import com.google.common.base.Optional;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
-
-import java.time.Duration;
 
 public class StatisticsUtils {
     public static int getSecondsPlayed(final Player player, final boolean isLegacy) {
@@ -115,52 +112,5 @@ public class StatisticsUtils {
         } else {
             return material.isItem();
         }
-    }
-
-    /**
-     * @author Sxtanna
-     */
-    public static String formatTime(final Duration duration) {
-        final StringBuilder builder = new StringBuilder();
-
-        long seconds = duration.getSeconds();
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        long days = hours / 24;
-
-        seconds %= 60;
-        minutes %= 60;
-        hours %= 60;
-        days %= 24;
-
-        if (seconds > 0) {
-            builder.insert(0, seconds + "s");
-        }
-
-        if (minutes > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, minutes + "m");
-        }
-
-        if (hours > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, hours + "h");
-        }
-
-        if (days > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, days + "d");
-        }
-
-        return builder.toString();
     }
 }

@@ -27,6 +27,7 @@ import com.google.common.collect.ListMultimap;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.Cacheable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import me.clip.placeholderapi.util.TimeUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -100,7 +101,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
              * Time played
              */
             case "time_played": {
-                return StatisticsUtils.formatTime(Duration.of(secondsPlayed, ChronoUnit.SECONDS));
+                return TimeUtil.getTime(Duration.of(secondsPlayed, ChronoUnit.SECONDS));
             }
 
             case "time_played:seconds": {
@@ -139,7 +140,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
              * Time since last death
              */
             case "time_since_death": {
-                return StatisticsUtils.formatTime(Duration.of(secondsSinceLastDeath, ChronoUnit.SECONDS));
+                return TimeUtil.getTime(Duration.of(secondsSinceLastDeath, ChronoUnit.SECONDS));
             }
 
             case "seconds_since_death": {
