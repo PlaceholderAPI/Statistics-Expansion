@@ -279,7 +279,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                 continue;
             }
 
-            if (!isLegacy && material.name().startsWith("LEGACY")) {
+            if (!isLegacy && material.name().startsWith("LEGACY") || material.name().equals("BURNING_FURNACE")) {
                 continue;
             }
 
