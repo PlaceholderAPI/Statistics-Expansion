@@ -22,12 +22,11 @@ package com.extendedclip.papi.expansion.mcstatistics;
 
 import com.google.common.base.Enums;
 import com.google.common.base.Optional;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
-import java.time.Duration;
+import java.util.StringJoiner;
 
 public class StatisticsUtils {
     public static int getSecondsPlayed(final Player player, final boolean isLegacy) {
@@ -117,50 +116,33 @@ public class StatisticsUtils {
         }
     }
 
-    /**
-     * @author Sxtanna
-     */
-    public static String formatTime(final Duration duration) {
-        final StringBuilder builder = new StringBuilder();
+    public static String formatTime(long seconds) {
+        final StringJoiner joiner = new StringJoiner(" ");
 
-        long seconds = duration.getSeconds();
         long minutes = seconds / 60;
         long hours = minutes / 60;
-        long days = hours / 24;
+        final long days = hours / 24;
 
         seconds %= 60;
         minutes %= 60;
-        hours %= 60;
-        days %= 24;
+        hours %= 24;
 
-        if (seconds > 0) {
-            builder.insert(0, seconds + "s");
-        }
-
-        if (minutes > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, minutes + "m");
+        if (days > 0) {
+            joiner.add(days + "d");
         }
 
         if (hours > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, hours + "h");
+            joiner.add(hours + "h");
         }
 
-        if (days > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, days + "d");
+        if (minutes > 0) {
+            joiner.add(minutes + "m");
         }
 
-        return builder.toString();
+        if (seconds > 0) {
+            joiner.add(seconds + "s");
+        }
+
+        return joiner.toString();
     }
 }

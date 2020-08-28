@@ -34,8 +34,6 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,7 +45,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
     private final String VERSION = getClass().getPackage().getImplementationVersion();
     private final boolean isLegacy = !Enums.getIfPresent(Material.class, "TURTLE_HELMET").isPresent();
     public static final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
-    
+
     @Override
     public String getAuthor() {
         return "clip";
@@ -100,7 +98,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
              * Time played
              */
             case "time_played": {
-                return StatisticsUtils.formatTime(Duration.of(secondsPlayed, ChronoUnit.SECONDS));
+                return StatisticsUtils.formatTime(secondsPlayed);
             }
 
             case "time_played:seconds": {
@@ -139,7 +137,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
              * Time since last death
              */
             case "time_since_death": {
-                return StatisticsUtils.formatTime(Duration.of(secondsSinceLastDeath, ChronoUnit.SECONDS));
+                return StatisticsUtils.formatTime(secondsSinceLastDeath);
             }
 
             case "seconds_since_death": {
@@ -275,6 +273,10 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 
         for (Material material : Material.values()) {
             if (ignoredMaterials.get(statistic).contains(material)) {
+                continue;
+            }
+
+            if (!isLegacy && material.name().startsWith("LEGACY") || material.name().equals("BURNING_FURNACE")) {
                 continue;
             }
 
