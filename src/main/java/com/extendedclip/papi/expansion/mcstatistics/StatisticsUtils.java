@@ -127,11 +127,12 @@ public class StatisticsUtils {
         long minutes = seconds / 60;
         long hours = minutes / 60;
         long days = hours / 24;
+        long weeks = days / 7;
 
         seconds %= 60;
         minutes %= 60;
-        hours %= 60;
-        days %= 24;
+        hours %= 24;
+        days %= 7;
 
         if (seconds > 0) {
             builder.insert(0, seconds + "s");
@@ -159,6 +160,14 @@ public class StatisticsUtils {
             }
 
             builder.insert(0, days + "d");
+        }
+
+        if (weeks > 0) {
+            if (builder.length() > 0) {
+                builder.insert(0, ' ');
+            }
+
+            builder.insert(0, weeks + "w");
         }
 
         return builder.toString();
