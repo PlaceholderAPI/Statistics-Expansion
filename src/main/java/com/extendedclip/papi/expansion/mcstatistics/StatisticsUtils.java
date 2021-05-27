@@ -22,25 +22,30 @@ package com.extendedclip.papi.expansion.mcstatistics;
 
 import com.google.common.base.Enums;
 import com.google.common.base.Optional;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
-import org.bukkit.entity.Player;
 
 import java.time.Duration;
 
 public class StatisticsUtils {
-    public static int getSecondsPlayed(final Player player, final boolean isLegacy) {
-        return isLegacy ? player.getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20 : player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
+    public static int getSecondsPlayed(final OfflinePlayer player, final boolean isLegacy, final boolean supportOfflinePlayers) {
+        if(supportOfflinePlayers) return player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
+        return isLegacy ? player.getPlayer().getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20 : player.getPlayer().getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
     }
 
-    public static int getSecondsSinceLastDeath(final Player player, final boolean isLegacy) {
-        return isLegacy ? player.getStatistic(Statistic.valueOf("TIME_SINCE_DEATH")) / 20 : player.getStatistic(Statistic.TIME_SINCE_DEATH) / 20;
+    public static int getSecondsSinceLastDeath(final OfflinePlayer player, final boolean isLegacy, final boolean supportOfflinePlayers) {
+        if(supportOfflinePlayers) return player.getStatistic(Statistic.TIME_SINCE_DEATH) / 20;
+        return isLegacy ? player.getPlayer().getStatistic(Statistic.valueOf("TIME_SINCE_DEATH")) / 20 : player.getPlayer().getStatistic(Statistic.TIME_SINCE_DEATH) / 20;
     }
 
     @SuppressWarnings("Guava")
-    public static String getStatistic(final Player player, final String identifier) {
+    public static String getStatistic(final OfflinePlayer player, final String identifier, final boolean supportOfflinePlayers) {
         final Optional<Statistic> optional = Enums.getIfPresent(Statistic.class, identifier.toUpperCase());
+
+        if(!supportOfflinePlayers && !player.isOnline()) {
+            return "Cannot get statistic, player is offline";
+        }
 
         if (!optional.isPresent()) {
             return "Unknown statistic '" + identifier + "', check https://helpch.at/docs/" + StatisticsExpansion.SERVER_VERSION + "/org/bukkit/Statistic.html for more info";
@@ -50,7 +55,8 @@ public class StatisticsUtils {
             return "The statistic '" + identifier + "' require an argument, check https://helpch.at/docs/" + StatisticsExpansion.SERVER_VERSION + "/org/bukkit/Statistic.Type.html for more info" ;
         }
 
-        return Integer.toString(player.getStatistic(optional.get()));
+        int statistic = supportOfflinePlayers ? player.getStatistic(optional.get()) : player.getPlayer().getStatistic(optional.get());
+        return Integer.toString(statistic);
     }
 
     public static boolean isItem(final Material material, final boolean isLegacy) {

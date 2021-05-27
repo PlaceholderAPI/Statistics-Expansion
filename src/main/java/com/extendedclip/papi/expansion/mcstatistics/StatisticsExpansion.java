@@ -32,7 +32,6 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -47,6 +46,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
     private final String VERSION = getClass().getPackage().getImplementationVersion();
     private final boolean isLegacy = !Enums.getIfPresent(Material.class, "TURTLE_HELMET").isPresent();
     public static final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
+    private final boolean supportOfflinePlayers = Enums.getIfPresent(Material.class, "BEEHIVE").isPresent();
     
     @Override
     public String getAuthor() {
@@ -65,19 +65,17 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 
     @SuppressWarnings({"DuplicatedCode", "Guava"})
     @Override
-    public String onRequest(final OfflinePlayer offlinePlayer, String identifier) {
-        if (offlinePlayer == null) {
+    public String onRequest(OfflinePlayer player, String identifier) {
+        if (player == null) {
             return "";
         }
 
-        if (!offlinePlayer.isOnline()) {
+        if (!supportOfflinePlayers && !player.isOnline()) {
             return "";
         }
 
-        final Player player = offlinePlayer.getPlayer();
-
-        final int secondsPlayed = StatisticsUtils.getSecondsPlayed(player, isLegacy);
-        final int secondsSinceLastDeath = StatisticsUtils.getSecondsSinceLastDeath(player, isLegacy);
+        final int secondsPlayed = StatisticsUtils.getSecondsPlayed(player, isLegacy, supportOfflinePlayers);
+        final int secondsSinceLastDeath = StatisticsUtils.getSecondsSinceLastDeath(player, isLegacy, supportOfflinePlayers);
 
         switch (identifier.toLowerCase()) {
             case "mine_block": {
@@ -162,14 +160,14 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
         final int splitterIndex = identifier.indexOf(':');
         // %statistic_<Statistic>%
         if (splitterIndex == -1) {
-            return StatisticsUtils.getStatistic(player, identifier);
+            return StatisticsUtils.getStatistic(player, identifier, supportOfflinePlayers);
         }
 
         final String statisticIdentifier = identifier.substring(0, splitterIndex).toUpperCase();
         final String types = identifier.substring(splitterIndex + 1).toUpperCase();
 
         if (types.trim().isEmpty()) {
-            return StatisticsUtils.getStatistic(player, statisticIdentifier);
+            return StatisticsUtils.getStatistic(player, statisticIdentifier, supportOfflinePlayers);
         }
 
         final Optional<Statistic> statisticOptional = Enums.getIfPresent(Statistic.class, statisticIdentifier);
@@ -192,7 +190,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        return Integer.toString(player.getStatistic(statistic, material.get()));
+                        return Integer.toString(supportOfflinePlayers ? player.getStatistic(statistic, material.get()) : player.getPlayer().getStatistic(statistic, material.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'", e);
                         return "Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'";
@@ -207,7 +205,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        return Integer.toString(player.getStatistic(statistic, entityType.get()));
+                        return Integer.toString(supportOfflinePlayers ? player.getStatistic(statistic, entityType.get()) : player.getPlayer().getStatistic(statistic, entityType.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'", e);
                         return "Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'";
@@ -234,7 +232,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        total.addAndGet(player.getStatistic(statistic, material.get()));
+                        total.addAndGet(supportOfflinePlayers ? player.getStatistic(statistic, material.get()) : player.getPlayer().getStatistic(statistic, material.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'", e);
                         break;
@@ -253,7 +251,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        total.addAndGet(player.getStatistic(statistic, entityType.get()));
+                        total.addAndGet(supportOfflinePlayers ? player.getStatistic(statistic, entityType.get()) : player.getPlayer().getStatistic(statistic, entityType.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'", e);
                         break;
@@ -270,7 +268,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
         return Integer.toString(total.get());
     }
 
-    private String calculateTotal(final Player player, final Statistic statistic) {
+    private String calculateTotal(final OfflinePlayer player, final Statistic statistic) {
         final AtomicLong total = new AtomicLong();
 
         for (Material material : Material.values()) {
@@ -283,7 +281,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
             }
 
             try {
-                total.addAndGet(player.getStatistic(statistic, material));
+                total.addAndGet(supportOfflinePlayers ? player.getStatistic(statistic, material) : player.getPlayer().getStatistic(statistic, material));
             } catch (IllegalArgumentException ignored) {
                 ignoredMaterials.put(statistic, material);
             }
