@@ -98,7 +98,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
              * Time played
              */
             case "time_played": {
-                return StatisticsUtils.formatTime(Duration.of(secondsPlayed, ChronoUnit.SECONDS));
+                return StatisticsUtils.formatTime(secondsPlayed);
             }
 
             case "time_played:seconds": {
@@ -137,7 +137,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
              * Time since last death
              */
             case "time_since_death": {
-                return StatisticsUtils.formatTime(Duration.of(secondsSinceLastDeath, ChronoUnit.SECONDS));
+                return StatisticsUtils.formatTime(secondsSinceLastDeath);
             }
 
             case "seconds_since_death": {
