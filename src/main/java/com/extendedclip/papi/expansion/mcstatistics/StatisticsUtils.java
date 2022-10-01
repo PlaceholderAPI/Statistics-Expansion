@@ -27,6 +27,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 
 import java.time.Duration;
+import java.util.StringJoiner;
 
 public class StatisticsUtils {
     public static int getSecondsPlayed(final OfflinePlayer player, final boolean isLegacy, final boolean supportOfflinePlayers) {
@@ -126,10 +127,16 @@ public class StatisticsUtils {
     /**
      * @author Sxtanna
      */
-    public static String formatTime(final Duration duration) {
-        final StringBuilder builder = new StringBuilder();
+    public static String formatTime(final long time) {
+        if (time < 1) {
+            return "";
+        }
 
-        long seconds = duration.getSeconds();
+        if (time < 60) {
+            return time + "s";
+        }
+
+        long seconds = time;
         long minutes = seconds / 60;
         long hours = minutes / 60;
         long days = hours / 24;
@@ -140,42 +147,19 @@ public class StatisticsUtils {
         hours %= 24;
         days %= 7;
 
-        if (seconds > 0) {
-            builder.insert(0, seconds + "s");
-        }
-
-        if (minutes > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, minutes + "m");
-        }
-
-        if (hours > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, hours + "h");
-        }
-
-        if (days > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, days + "d");
-        }
-
-        if (weeks > 0) {
-            if (builder.length() > 0) {
-                builder.insert(0, ' ');
-            }
-
-            builder.insert(0, weeks + "w");
-        }
-
-        return builder.toString();
+        final StringJoiner joiner = new StringJoiner(" ");
+        appendTime(joiner, weeks, "w");
+        appendTime(joiner, days, "d");
+        appendTime(joiner, hours, "h");
+        appendTime(joiner, minutes, "m");
+        appendTime(joiner, seconds, "s");
+        return joiner.toString();
     }
+
+    private static void appendTime(final StringJoiner joiner, final long value, final String unit) {
+        if (value > 0) {
+            joiner.add(value + unit);
+        }
+    }
+
 }
