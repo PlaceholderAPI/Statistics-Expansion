@@ -26,38 +26,43 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 
-import java.time.Duration;
 import java.util.StringJoiner;
 
 public class StatisticsUtils {
-    public static int getSecondsPlayed(final OfflinePlayer player, final boolean isLegacy, final boolean supportOfflinePlayers) {
-        if(supportOfflinePlayers) return player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
-        return isLegacy ? player.getPlayer().getStatistic(Statistic.valueOf("PLAY_ONE_TICK")) / 20 : player.getPlayer().getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
+
+    private static final Statistic SECONDS_PLAYED_STATISTIC = ServerVersion.IS_LEGACY ? Statistic.valueOf("PLAY_ONE_TICK") : Statistic.PLAY_ONE_MINUTE;
+    private static final Statistic SECONDS_SINCE_LAST_DEATH_STATISTIC = ServerVersion.IS_LEGACY ? Statistic.valueOf("TIME_SINCE_DEATH") : Statistic.TIME_SINCE_DEATH;
+
+    public static final String JAVADOC_BASE_LINK = ServerVersion.IS_LATEST ? "https://hub.spigotmc.org/javadocs/spigot" : "https://docs.docdex.helpch.at/" + ServerVersion.AS_STRING;
+
+    public static int getSecondsPlayed(final OfflinePlayer player) {
+        return (ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(SECONDS_PLAYED_STATISTIC) : player.getPlayer().getStatistic(SECONDS_PLAYED_STATISTIC)) / 20;
     }
 
-    public static int getSecondsSinceLastDeath(final OfflinePlayer player, final boolean isLegacy, final boolean supportOfflinePlayers) {
-        if(supportOfflinePlayers) return player.getStatistic(Statistic.TIME_SINCE_DEATH) / 20;
-        return isLegacy ? player.getPlayer().getStatistic(Statistic.valueOf("TIME_SINCE_DEATH")) / 20 : player.getPlayer().getStatistic(Statistic.TIME_SINCE_DEATH) / 20;
+    public static int getSecondsSinceLastDeath(final OfflinePlayer player) {
+        return (ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(SECONDS_SINCE_LAST_DEATH_STATISTIC) : player.getPlayer().getStatistic(SECONDS_SINCE_LAST_DEATH_STATISTIC)) / 20;
     }
 
     @SuppressWarnings("Guava")
-    public static String getStatistic(final OfflinePlayer player, final String identifier, final boolean supportOfflinePlayers) {
+    public static String getStatistic(final OfflinePlayer player, final String identifier) {
         final Optional<Statistic> optional = Enums.getIfPresent(Statistic.class, identifier.toUpperCase());
 
-        if(!supportOfflinePlayers && !player.isOnline()) {
+        if(!ServerVersion.SUPPORT_OFFLINE_PLAYERS && !player.isOnline()) {
             return "Cannot get statistic, player is offline";
         }
 
         if (!optional.isPresent()) {
-            return "Unknown statistic '" + identifier + "', check https://helpch.at/docs/" + StatisticsExpansion.SERVER_VERSION + "/org/bukkit/Statistic.html for more info";
+            return "Unknown statistic '" + identifier + "', check " + JAVADOC_BASE_LINK + "/org/bukkit/Statistic.html for more info";
         }
 
-        if (optional.get().getType() != Statistic.Type.UNTYPED) {
-            return "The statistic '" + identifier + "' require an argument, check https://helpch.at/docs/" + StatisticsExpansion.SERVER_VERSION + "/org/bukkit/Statistic.Type.html for more info" ;
+        final Statistic statistic = optional.get();
+
+        if (statistic.getType() != Statistic.Type.UNTYPED) {
+            return "The statistic '" + identifier + "' require an argument, check " + JAVADOC_BASE_LINK + "/org/bukkit/Statistic.Type.html for more info" ;
         }
 
-        int statistic = supportOfflinePlayers ? player.getStatistic(optional.get()) : player.getPlayer().getStatistic(optional.get());
-        return Integer.toString(statistic);
+        int value = ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(statistic) : player.getPlayer().getStatistic(statistic);
+        return Integer.toString(value);
     }
 
     public static boolean isItem(final Material material, final boolean isLegacy) {
