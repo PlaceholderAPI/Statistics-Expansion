@@ -27,14 +27,11 @@ import com.google.common.collect.ListMultimap;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.Cacheable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -44,10 +41,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
 
     private final ListMultimap<Statistic, Material> ignoredMaterials = ArrayListMultimap.create();
     private final String VERSION = getClass().getPackage().getImplementationVersion();
-    private final boolean isLegacy = !Enums.getIfPresent(Material.class, "TURTLE_HELMET").isPresent();
-    public static final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
-    private final boolean supportOfflinePlayers = Enums.getIfPresent(Material.class, "BEEHIVE").isPresent();
-    
+
     @Override
     public String getAuthor() {
         return "clip";
@@ -70,12 +64,9 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
             return "";
         }
 
-        if (!supportOfflinePlayers && !player.isOnline()) {
+        if (!ServerVersion.SUPPORT_OFFLINE_PLAYERS && !player.isOnline()) {
             return "";
         }
-
-        final int secondsPlayed = StatisticsUtils.getSecondsPlayed(player, isLegacy, supportOfflinePlayers);
-        final int secondsSinceLastDeath = StatisticsUtils.getSecondsSinceLastDeath(player, isLegacy, supportOfflinePlayers);
 
         switch (identifier.toLowerCase()) {
             case "mine_block": {
@@ -98,82 +89,79 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
              * Time played
              */
             case "time_played": {
-                return StatisticsUtils.formatTime(secondsPlayed);
+                return StatisticsUtils.formatTime(StatisticsUtils.getSecondsPlayed(player));
             }
 
             case "time_played:seconds": {
-                //return seconds != 0 ? Long.toString(TimeUnit.MINUTES.toSeconds(1) - seconds) : "0";
-                return Integer.toString(secondsPlayed % 60);
+                return Integer.toString(StatisticsUtils.getSecondsPlayed(player) % 60);
             }
 
             case "time_played:minutes": {
-                //return minutes != 0 ? Long.toString(TimeUnit.HOURS.toMinutes(1) - minutes) : "0";
-                return Long.toString(TimeUnit.SECONDS.toMinutes(secondsPlayed) % 60);
+                return Long.toString(TimeUnit.SECONDS.toMinutes(StatisticsUtils.getSecondsPlayed(player)) % 60);
             }
 
             case "time_played:hours": {
-                //return hours != 0 ? Long.toString(TimeUnit.DAYS.toHours(1) - hours) : "0";
-                return Long.toString(TimeUnit.SECONDS.toHours(secondsPlayed) % 24);
+                return Long.toString(TimeUnit.SECONDS.toHours(StatisticsUtils.getSecondsPlayed(player)) % 24);
             }
 
             case "seconds_played": {
-                return Integer.toString(secondsPlayed);
+                return Integer.toString(StatisticsUtils.getSecondsPlayed(player));
             }
 
             case "minutes_played": {
-                return Long.toString(TimeUnit.SECONDS.toMinutes(secondsPlayed));
+                return Long.toString(TimeUnit.SECONDS.toMinutes(StatisticsUtils.getSecondsPlayed(player)));
             }
 
             case "hours_played": {
-                return Long.toString(TimeUnit.SECONDS.toHours(secondsPlayed));
+                return Long.toString(TimeUnit.SECONDS.toHours(StatisticsUtils.getSecondsPlayed(player)));
             }
 
             case "time_played:days":
             case "days_played": {
-                return Long.toString(TimeUnit.SECONDS.toDays(secondsPlayed));
+                return Long.toString(TimeUnit.SECONDS.toDays(StatisticsUtils.getSecondsPlayed(player)));
             }
 
             /*
              * Time since last death
              */
             case "time_since_death": {
-                return StatisticsUtils.formatTime(secondsSinceLastDeath);
+                return StatisticsUtils.formatTime(StatisticsUtils.getSecondsSinceLastDeath(player));
             }
 
             case "seconds_since_death": {
-                return Integer.toString(secondsSinceLastDeath);
+                return Integer.toString(StatisticsUtils.getSecondsSinceLastDeath(player));
             }
 
             case "minutes_since_death": {
-                return Long.toString(TimeUnit.SECONDS.toMinutes(secondsSinceLastDeath));
+                return Long.toString(TimeUnit.SECONDS.toMinutes(StatisticsUtils.getSecondsSinceLastDeath(player)));
             }
 
             case "hours_since_death": {
-                return Long.toString(TimeUnit.SECONDS.toHours(secondsSinceLastDeath));
+                return Long.toString(TimeUnit.SECONDS.toHours(StatisticsUtils.getSecondsSinceLastDeath(player)));
             }
 
             case "days_since_death": {
-                return Long.toString(TimeUnit.SECONDS.toDays(secondsSinceLastDeath));
+                return Long.toString(TimeUnit.SECONDS.toDays(StatisticsUtils.getSecondsSinceLastDeath(player)));
             }
         }
 
         final int splitterIndex = identifier.indexOf(':');
         // %statistic_<Statistic>%
         if (splitterIndex == -1) {
-            return StatisticsUtils.getStatistic(player, identifier, supportOfflinePlayers);
+            return StatisticsUtils.getStatistic(player, identifier);
         }
 
         final String statisticIdentifier = identifier.substring(0, splitterIndex).toUpperCase();
         final String types = identifier.substring(splitterIndex + 1).toUpperCase();
 
         if (types.trim().isEmpty()) {
-            return StatisticsUtils.getStatistic(player, statisticIdentifier, supportOfflinePlayers);
+            return StatisticsUtils.getStatistic(player, statisticIdentifier);
         }
 
         final Optional<Statistic> statisticOptional = Enums.getIfPresent(Statistic.class, statisticIdentifier);
 
         if (!statisticOptional.isPresent()) {
-            return "Unknown statistic '" + statisticIdentifier + "', check https://helpch.at/docs/" + SERVER_VERSION + "/org/bukkit/Statistic.html for more info";
+            return "Unknown statistic '" + statisticIdentifier + "', check " + StatisticsUtils.JAVADOC_BASE_LINK + "/org/bukkit/Statistic.html for more info";
         }
 
         final Statistic statistic = statisticOptional.get();
@@ -190,7 +178,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        return Integer.toString(supportOfflinePlayers ? player.getStatistic(statistic, material.get()) : player.getPlayer().getStatistic(statistic, material.get()));
+                        return Integer.toString(ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(statistic, material.get()) : player.getPlayer().getStatistic(statistic, material.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'", e);
                         return "Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'";
@@ -205,7 +193,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        return Integer.toString(supportOfflinePlayers ? player.getStatistic(statistic, entityType.get()) : player.getPlayer().getStatistic(statistic, entityType.get()));
+                        return Integer.toString(ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(statistic, entityType.get()) : player.getPlayer().getStatistic(statistic, entityType.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'", e);
                         return "Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'";
@@ -232,7 +220,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        total.addAndGet(supportOfflinePlayers ? player.getStatistic(statistic, material.get()) : player.getPlayer().getStatistic(statistic, material.get()));
+                        total.addAndGet(ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(statistic, material.get()) : player.getPlayer().getStatistic(statistic, material.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + material.get().name() + "'", e);
                         break;
@@ -251,7 +239,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                     }
 
                     try {
-                        total.addAndGet(supportOfflinePlayers ? player.getStatistic(statistic, entityType.get()) : player.getPlayer().getStatistic(statistic, entityType.get()));
+                        total.addAndGet(ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(statistic, entityType.get()) : player.getPlayer().getStatistic(statistic, entityType.get()));
                     } catch (IllegalArgumentException e) {
                         errorLog("Could not get the statistic '" + statistic.name() + "' for '" + entityType.get().name() + "'", e);
                         break;
@@ -281,7 +269,7 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
             }
 
             try {
-                total.addAndGet(supportOfflinePlayers ? player.getStatistic(statistic, material) : player.getPlayer().getStatistic(statistic, material));
+                total.addAndGet(ServerVersion.SUPPORT_OFFLINE_PLAYERS ? player.getStatistic(statistic, material) : player.getPlayer().getStatistic(statistic, material));
             } catch (IllegalArgumentException ignored) {
                 ignoredMaterials.put(statistic, material);
             }
