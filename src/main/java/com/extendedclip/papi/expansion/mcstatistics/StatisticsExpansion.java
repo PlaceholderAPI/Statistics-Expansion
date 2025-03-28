@@ -264,6 +264,10 @@ public class StatisticsExpansion extends PlaceholderExpansion implements Cacheab
                 continue;
             }
 
+            if (material.name().startsWith("LEGACY_")) {
+                continue;
+            }
+
             if (statistic == Statistic.MINE_BLOCK && (material.name().equals("GRASS") || material.name().equals("SOIL"))) {
                 continue;
             }
